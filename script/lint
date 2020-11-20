@@ -1,0 +1,8 @@
+#!/usr/bin/env bash
+
+set -eou pipefail
+
+[ -d reports ] || mkdir reports
+
+echo "--- Testing with golangci"
+golangci-lint run "./..." -c ".golangci.yml" --out-format checkstyle | tee "reports/lint-results.xml"
