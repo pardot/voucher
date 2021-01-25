@@ -42,6 +42,15 @@ jobs:
     runs-on: ubuntu-latest
     steps:
 
+    - name: Check out code into the Go module directory
+      uses: actions/checkout@v2
+
+    - name: Docker meta
+      id: docker_meta
+      uses: crazy-max/ghaction-docker-meta@v1
+      with:
+        images: docker.pkg.github.com:pardot/voucher/voucher
+
     - name: Set up QEMU
       uses: docker/setup-qemu-action@v1
 
@@ -51,9 +60,19 @@ jobs:
       with:
         install: true
 
-    - name: Check out code into the Go module directory
-      uses: actions/checkout@v2
+    - name: Login to GitHub Packages Docker Registry
+      uses: docker/login-action@v1
+      with:
+        registry: docker.pkg.github.com
+        username: ${{ github.repository_owner }}
+        password: ${{ secrets.GITHUB_TOKEN }}
 
-    - name: Build image
-      run: |
-        docker build --output "type=image,push=false" --platform "linux/amd64,linux/arm64" -t voucher .
+    - name: Build and push
+      uses: docker/build-push-action@v2
+      with:
+        context: .
+        file: ./Dockerfile
+        platforms: linux/amd64,linux/arm64
+        push: ${{ github.event_name != 'pull_request' }}
+        tags: ${{ steps.docker_meta.outputs.tags }}
+        labels: ${{ steps.docker_meta.outputs.labels }}
